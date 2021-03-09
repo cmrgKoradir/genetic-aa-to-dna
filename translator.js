@@ -1,3 +1,5 @@
+import {randInt} from './random.js'
+
 class AaToDnaTranlator extends HTMLElement {
     constructor(){
         super()
@@ -19,6 +21,14 @@ class AaToDnaTranlator extends HTMLElement {
                 flex-grow:1;
                 margin-right:.5em;
             }
+            .visualisation{
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            .visualisation > div {
+                margin-top: 0.5em;
+            }
         </style>
         <div class="aa-to-dna-translator">
             <div class="editor">
@@ -34,6 +44,60 @@ class AaToDnaTranlator extends HTMLElement {
         const translateBtn = this._shadow.querySelector('.translate-btn')
         const aaInput = this._shadow.querySelector('.aa-input')
         translateBtn.onclick = () => this.findPossibleDNA(aaInput.value)
+    }
+
+    findPossibleDNA(aaSequence){
+        this.#showCandidates([new Candidate(14), new Candidate(14)])
+    }
+
+    /**
+     * replaces the displayed candidates with the new candidates
+     * @param {Candidate[]} candidates the new candidates to display
+     */
+    #showCandidates(candidates){
+        const visualisation = this._shadow.querySelector('.visualisation')
+        while(visualisation.lastElementChild){
+            visualisation.removeChild(visualisation.lastElementChild)
+        }
+
+        for(const c of candidates){
+            this.#showCandidate(c)
+        }
+    }
+
+    /**
+     * appends a candidate to the visualisation section
+     * @param {Candiate} candidate 
+     */
+    #showCandidate(candidate){
+        const template = `
+        <style>
+            * {
+                padding: 0;
+                margin: 0;
+                box-sizing: border-box;
+            }
+            .candidate {
+                display: flex;
+                flex-direction: column;
+                width: 100%
+            }
+            .dna-sequence{
+                color: grey;
+                font-size: 0.5em;
+            }
+            .aa-sequence{
+                color: black;
+            }
+        </style>
+        <div class="candidate">
+            <div class="dna-sequence">${candidate.dna}</div>
+            <div class="aa-sequence">${candidate.aa}</div>
+        </div>
+        `
+        const e = document.createElement('div')
+        e.innerHTML = template
+        this._shadow.querySelector(".visualisation").appendChild(e)
     }
 
     static #defaultAa = "X"
@@ -103,10 +167,7 @@ class AaToDnaTranlator extends HTMLElement {
         ["GGA", "G"],
         ["GGG", "G"],
     ])
-
-    findPossibleDNA(aaSequence){
-        alert(aaSequence)
-    }
+    static availableTriplets = Array.from(AaToDnaTranlator.#dnaToAa.keys())
 
     /**
      * @param {string} dna a sequence of dna symbol triplets
@@ -126,6 +187,27 @@ class AaToDnaTranlator extends HTMLElement {
             result = result + aaSymbol
         }
         return result
+    }
+}
+
+class Candidate{
+    /**
+     * @param {number} targetLength how long the AA sequence should be
+     */
+    constructor(targetLength){
+        this.updateDna(this.#randomDna(targetLength))
+    }
+
+    updateDna(dna){
+        this.dna = dna
+        this.aa = AaToDnaTranlator.dnaToAa(this.dna)
+    }
+
+    #randomDna(targetLength){
+        const availableTriplets = AaToDnaTranlator.availableTriplets
+        const mapSize = availableTriplets.length
+        const randomTriplets = Array(targetLength).fill(1).map(() => availableTriplets[randInt(mapSize)])
+        return randomTriplets.join('')
     }
 }
 
