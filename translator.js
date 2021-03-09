@@ -36,8 +36,8 @@ class AaToDnaTranlator extends HTMLElement {
         translateBtn.onclick = () => this.findPossibleDNA(aaInput.value)
     }
 
-    #defaultAa = "X"
-    #dnaToAa = new Map([
+    static #defaultAa = "X"
+    static #dnaToAa = new Map([
         ["TTT", "F"],
         ["TTC", "F"],
         ["TTA", "L"],
@@ -106,6 +106,26 @@ class AaToDnaTranlator extends HTMLElement {
 
     findPossibleDNA(aaSequence){
         alert(aaSequence)
+    }
+
+    /**
+     * @param {string} dna a sequence of dna symbol triplets
+     * @returns {string} aa sequence as string
+    */
+    static dnaToAa(dna){
+        if(dna.length % 3 != 0){
+            throw 'dna expected to be a multiple of 3 symbols long'
+        }
+
+        dna = dna.toUpperCase()
+
+        let result = ""
+        for(let i = 0; i <= dna.length -3; i += 3){
+            const triplet = [dna[i], dna[i+1], dna[i+2]].join('')
+            const aaSymbol = AaToDnaTranlator.#dnaToAa.get(triplet) || AaToDnaTranlator.#defaultAa
+            result = result + aaSymbol
+        }
+        return result
     }
 }
 
