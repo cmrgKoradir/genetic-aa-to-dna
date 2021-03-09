@@ -1,6 +1,9 @@
 import {randInt} from './random.js'
 
 class AaToDnaTranlator extends HTMLElement {
+
+    #populationSize = 200
+
     constructor(){
         super()
         this._shadow = this.attachShadow({mode: 'closed'})
@@ -14,6 +17,11 @@ class AaToDnaTranlator extends HTMLElement {
                 padding: 0;
                 margin: 0;
             }
+            .aa-to-dna-translator{
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+            }
             .editor {
                 display: flex;
             }
@@ -24,7 +32,9 @@ class AaToDnaTranlator extends HTMLElement {
             .visualisation{
                 display: flex;
                 flex-direction: column;
+                justify-content: left;
                 align-items: center;
+                overflow: auto;
             }
             .visualisation > div {
                 margin-top: 0.5em;
@@ -40,6 +50,8 @@ class AaToDnaTranlator extends HTMLElement {
         </div>
         `
         this._shadow.innerHTML = template
+        this.style.height = '100%'
+        this.style.width = '100%'
 
         const translateBtn = this._shadow.querySelector('.translate-btn')
         const aaInput = this._shadow.querySelector('.aa-input')
@@ -47,7 +59,14 @@ class AaToDnaTranlator extends HTMLElement {
     }
 
     findPossibleDNA(aaSequence){
-        this.#showCandidates([new Candidate(14), new Candidate(14)])
+        if(!aaSequence || aaSequence.length < 1){
+            alert("Please enter a sequence.")
+            return
+        }
+
+        let population = Array(this.#populationSize).fill(1).map(() => new Candidate(aaSequence.length))
+
+        this.#showCandidates(population)
     }
 
     /**
@@ -85,9 +104,11 @@ class AaToDnaTranlator extends HTMLElement {
             .dna-sequence{
                 color: grey;
                 font-size: 0.5em;
+                overflow-wrap: anywhere;
             }
             .aa-sequence{
                 color: black;
+                overflow-wrap: anywhere;
             }
         </style>
         <div class="candidate">
