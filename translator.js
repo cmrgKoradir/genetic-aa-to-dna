@@ -4,7 +4,7 @@ class AaToDnaTranlator extends HTMLElement {
 
     #epsilon = 0
     #populationSize = 200
-    #maxGenerations = 1000
+    #maxGenerations = 10000
 
     #bestSoFar = undefined
     #currentGeneration = undefined
@@ -97,11 +97,15 @@ class AaToDnaTranlator extends HTMLElement {
         let accuracy = 0
         this.#bestSoFar = undefined
         this.#currentGeneration = 1
-        do {
+        const loop = () =>{
             population = this.#nextPopulation(targetLength, population)
             accuracy = Math.max(accuracy, this.#calculateFitness(aaSequence, population))
             this.#showCandidates(accuracy, population)
-        }while(accuracy < 1-this.#epsilon && ++this.#currentGeneration < this.#maxGenerations)
+            if(accuracy < 1-this.#epsilon && ++this.#currentGeneration < this.#maxGenerations){
+                window.setTimeout(loop, 0)
+            }
+        }
+        loop()
     }
 
     /**
