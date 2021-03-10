@@ -109,22 +109,22 @@ class AaToDnaTranlator extends HTMLElement {
 
 
 
-    findPossibleDNA(aaSequence){
-        if(!aaSequence || aaSequence.length < 1){
+    findPossibleDNA(targetAaSequence){
+        if(!targetAaSequence || targetAaSequence.length < 1){
             alert("Please enter a sequence.")
             return
         }
 
-        aaSequence = aaSequence.toUpperCase()
-        const targetLength = aaSequence.length
+        targetAaSequence = targetAaSequence.toUpperCase()
+        const targetLength = targetAaSequence.length
         let population = []
         let accuracy = 0
         this.#bestSoFar = undefined
         this.#currentGeneration = 1
         const loop = () =>{
             population = this.#nextPopulation(targetLength, population)
-            accuracy = Math.max(accuracy, this.#calculateFitness(aaSequence, population))
-            this.#showCandidates(accuracy, population)
+            accuracy = Math.max(accuracy, this.#calculateFitness(targetAaSequence, population))
+            this.#showCandidates(targetAaSequence, accuracy, population)
             if(!this.#abort && accuracy < 1-this.#epsilon && ++this.#currentGeneration < this.#maxGenerations){
                 window.setTimeout(loop, 0)
             }
@@ -256,7 +256,7 @@ class AaToDnaTranlator extends HTMLElement {
      * replaces the displayed candidates with the new candidates
      * @param {Candidate[]} candidates the new candidates to display
      */
-    #showCandidates(accuracy, candidates){
+    #showCandidates(target, accuracy, candidates){
         this._shadow.querySelector('.result').style.display = 'flex'
         const visualisation = this._shadow.querySelector('.visualisation')
         while(visualisation.lastElementChild){
@@ -272,7 +272,7 @@ class AaToDnaTranlator extends HTMLElement {
         }
 
         this.#updateStatistics(accuracy)
-        this.#showBestCandidate(bestCandidate)
+        this.#showBestCandidate(target, bestCandidate)
     }
 
     /**
@@ -320,19 +320,22 @@ class AaToDnaTranlator extends HTMLElement {
 
         statistics.innerHTML = `
             <span>Generation: ${this.#currentGeneration}</span>
-            <span>Best Match: ${accuracy * 100}%
+            <span>Best Match: ${(accuracy * 100).toFixed(2)}%
         `
     }
 
     /**
+     * @param {string} target the AA sequence we want to produce
      * @param {Candidate} bestInGeneration 
      */
-    #showBestCandidate(bestInGeneration){
+    #showBestCandidate(target, bestInGeneration){
         if(!this.#bestSoFar || bestInGeneration.score > this.#bestSoFar.score){
             this.#bestSoFar = bestInGeneration
         }
-        const bestDisplay = this._shadow.querySelector(".best-candidate")
 
+        const highlightedAa = this.#highlightDifferences(target, this.#bestSoFar.aa)
+                
+        const bestDisplay = this._shadow.querySelector(".best-candidate")
         bestDisplay.innerHTML = `
             <style>
                 .best-dna,.best-aa {
@@ -344,10 +347,42 @@ class AaToDnaTranlator extends HTMLElement {
                 .best-aa {
                     font-weight: bold;
                 }
+                .best-aa .diff {
+                    color: red;
+                }
             </style>
             <div class="best-dna"><span>${this.#bestSoFar.dna}</span></div>
-            <div class="best-aa"><span>${this.#bestSoFar.aa}</span></div>
+            <div class="best-aa">${highlightedAa}</div>
         `
+    }
+
+    /**
+     * @param {string} target the sequence that needs be matched
+     * @param {string} candidateSequence the sequence that was produced
+     * @returns {string} a html string containing the candidate sequence where the symbols not matching the target
+     * have a 'diff' class
+     */
+    #highlightDifferences(target, candidateSequence){
+        let highlightedAa = ""
+        let matching = true
+        for(let i = 0, prev = 0; i <= candidateSequence.length; ++i){
+            const isLast = i == candidateSequence.length
+            const symbolMatches = !isLast && target[i] == candidateSequence[i]
+            const modeChange = isLast || matching != symbolMatches
+
+            if(modeChange){
+                const currentGroup = candidateSequence.substr(prev, i-prev)
+                prev = i
+                if(matching){
+                    highlightedAa += `<span>${currentGroup}</span>`
+                }
+                else {
+                    highlightedAa += `<span class="diff">${currentGroup}</span>`
+                }
+                matching = !matching
+            }
+        }
+        return highlightedAa
     }
 
     static #defaultAa = "X"
