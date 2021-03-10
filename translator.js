@@ -148,11 +148,11 @@ class AaToDnaTranlator extends HTMLElement {
         let maxC = 0
         let sum = 0
 
-        //score = amount of matching positions
+        //score = 2 ** (amount of matching positions)
         for(const p of population){
             const c = this.#countEqualPositions(target, p.aa)
-            p.score = c
-            sum += c
+            p.score = 2 ** c
+            sum += p.score
             maxC = Math.max(maxC, c)
         }
 
