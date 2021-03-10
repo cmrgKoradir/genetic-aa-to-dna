@@ -4,11 +4,15 @@ class AaToDnaTranlator extends HTMLElement {
 
     #epsilon = 0
     #populationSize = 200
-    #mutationRate = 0.1
+    #mutationRate = 0.01
     #maxGenerations = 10000
 
     #bestSoFar = undefined
     #currentGeneration = undefined
+    #abort = false
+
+    #startLabel = 'Translate'
+    #stopLabel = 'Stop'
 
     constructor(){
         super()
@@ -81,10 +85,29 @@ class AaToDnaTranlator extends HTMLElement {
 
         this._shadow.querySelector('.result').style.display = 'none'
 
+        this.#stopAction()
+    }
+
+    #startAction(){
         const translateBtn = this._shadow.querySelector('.translate-btn')
         const aaInput = this._shadow.querySelector('.aa-input')
-        translateBtn.onclick = () => window.setTimeout(() => this.findPossibleDNA(aaInput.value), 0)
+
+        this.#abort = false
+        translateBtn.textContent = this.#stopLabel
+        translateBtn.onclick = () => this.#stopAction()
+
+        this.findPossibleDNA(aaInput.value)
     }
+
+    #stopAction(){
+        const translateBtn = this._shadow.querySelector('.translate-btn')
+
+        this.#abort = true
+        translateBtn.textContent = this.#startLabel
+        translateBtn.onclick = () => this.#startAction()
+    }
+
+
 
     findPossibleDNA(aaSequence){
         if(!aaSequence || aaSequence.length < 1){
@@ -102,8 +125,11 @@ class AaToDnaTranlator extends HTMLElement {
             population = this.#nextPopulation(targetLength, population)
             accuracy = Math.max(accuracy, this.#calculateFitness(aaSequence, population))
             this.#showCandidates(accuracy, population)
-            if(accuracy < 1-this.#epsilon && ++this.#currentGeneration < this.#maxGenerations){
+            if(!this.#abort && accuracy < 1-this.#epsilon && ++this.#currentGeneration < this.#maxGenerations){
                 window.setTimeout(loop, 0)
+            }
+            else {
+                this.#stopAction()
             }
         }
         loop()
@@ -392,6 +418,7 @@ class AaToDnaTranlator extends HTMLElement {
         ["GGG", "G"],
     ])
     static availableTriplets = Array.from(AaToDnaTranlator.#dnaToAa.keys())
+    static availableSymbols = ['A','T','G','C']
 
     /**
      * @param {string} dna a sequence of dna symbol triplets
