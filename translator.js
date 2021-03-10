@@ -4,6 +4,10 @@ class AaToDnaTranlator extends HTMLElement {
 
     #epsilon = 0
     #populationSize = 200
+    #maxGenerations = 10000
+
+    #bestSoFar = undefined
+    #currentGeneration = undefined
 
     constructor(){
         super()
@@ -30,6 +34,21 @@ class AaToDnaTranlator extends HTMLElement {
                 flex-grow:1;
                 margin-right:.5em;
             }
+            .result {
+                display:flex;
+                flex-direction: column;
+                margin-bottom: 0.5em;
+            }
+            .result > * {
+                margin-top: 0.5em;
+            }
+            .statistics{
+                display:flex;
+                background-color: lightgrey;
+            }
+            .statistics > * {
+                padding: 0.25em;
+            }
             .visualisation{
                 display: flex;
                 flex-direction: column;
@@ -46,7 +65,10 @@ class AaToDnaTranlator extends HTMLElement {
                 <input class="aa-input"></input>
                 <button class="translate-btn">Translate</button>
             </div>
-            <div class="result"></div>
+            <div class="result">
+                <div class="statistics"></div>
+                <div class="best-fit"></div>
+            </div>
             <div class="visualisation"></div>
         </div>
         `
@@ -56,7 +78,7 @@ class AaToDnaTranlator extends HTMLElement {
 
         const translateBtn = this._shadow.querySelector('.translate-btn')
         const aaInput = this._shadow.querySelector('.aa-input')
-        translateBtn.onclick = () => this.findPossibleDNA(aaInput.value)
+        translateBtn.onclick = () => window.setTimeout(() => this.findPossibleDNA(aaInput.value), 0)
     }
 
     findPossibleDNA(aaSequence){
@@ -68,13 +90,14 @@ class AaToDnaTranlator extends HTMLElement {
         aaSequence = aaSequence.toUpperCase()
         const targetLength = aaSequence.length
         let population = []
-        let achievedFitness = 0
-        let saveGuard = 10000
+        let accuracy = 0
+        this.#bestSoFar = undefined
+        this.#currentGeneration = 1
         do {
             population = this.#nextPopulation(targetLength, population)
-            this.#showCandidates(population)
-            achievedFitness = this.#calculateFitness(aaSequence, population)
-        }while(achievedFitness < 1-this.#epsilon && --saveGuard > 0)
+            accuracy = Math.max(accuracy, this.#calculateFitness(aaSequence, population))
+            this.#showCandidates(accuracy, population)
+        }while(accuracy < 1-this.#epsilon && ++this.#currentGeneration < this.#maxGenerations)
     }
 
     /**
@@ -82,7 +105,7 @@ class AaToDnaTranlator extends HTMLElement {
      * @param {string} target the AA sequence we want to achieve
      * @param {Candidate[]} population the current candidates
      * 
-     * @returns 1 if an exact match has been found or less otherwise
+     * @returns percentage of target symbols matched
      */
     #calculateFitness(target, population){
         const n = target.length
@@ -90,18 +113,18 @@ class AaToDnaTranlator extends HTMLElement {
         let maxC = 0
         let sum = 0
 
-        //fitness = amount of matching positions
+        //score = amount of matching positions
         for(const p of population){
             const c = this.#countEqualPositions(target, p.aa)
-            p.fitness = c
+            p.score = c
             sum += c
             maxC = Math.max(maxC, c)
         }
 
-        //normalize fitness
+        //fitness = normalized score
         if(sum > 0){
             for(const p of population){
-                p.fitness = p.fitness / sum
+                p.fitness = p.score / sum
             }
         }else {
             for(const p of population){
@@ -150,15 +173,22 @@ class AaToDnaTranlator extends HTMLElement {
      * replaces the displayed candidates with the new candidates
      * @param {Candidate[]} candidates the new candidates to display
      */
-    #showCandidates(candidates){
+    #showCandidates(accuracy, candidates){
         const visualisation = this._shadow.querySelector('.visualisation')
         while(visualisation.lastElementChild){
             visualisation.removeChild(visualisation.lastElementChild)
         }
 
+        let bestCandidate = undefined
         for(const c of candidates){
             this.#showCandidate(c)
+            if(!bestCandidate || bestCandidate.score < c.score){
+                bestCandidate = c
+            }
         }
+
+        this.#updateStatistics(accuracy)
+        this.#showBestCandidate(bestCandidate)
     }
 
     /**
@@ -196,6 +226,25 @@ class AaToDnaTranlator extends HTMLElement {
         const e = document.createElement('div')
         e.innerHTML = template
         this._shadow.querySelector(".visualisation").appendChild(e)
+    }
+
+    /**
+     * @param {number} accuracy percentage of target positions that have ever been matched 
+     */
+    #updateStatistics(accuracy){
+        const statistics = this._shadow.querySelector(".statistics")
+
+        statistics.innerHTML = `
+            <span>Generation: ${this.#currentGeneration}</span>
+            <span>Best Match: ${accuracy * 100}%
+        `
+    }
+
+    /**
+     * @param {Candidate} bestInGeneration 
+     */
+    #showBestCandidate(bestInGeneration){
+        //TODO
     }
 
     static #defaultAa = "X"
