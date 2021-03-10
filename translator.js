@@ -4,6 +4,7 @@ class AaToDnaTranlator extends HTMLElement {
 
     #epsilon = 0
     #populationSize = 200
+    #mutationRate = 0.1
     #maxGenerations = 10000
 
     #bestSoFar = undefined
@@ -202,7 +203,7 @@ class AaToDnaTranlator extends HTMLElement {
         }).join('')
 
         childDNA = this.#mutate(childDNA)
-        
+
         return new Candidate(childDNA)
     }
 
@@ -212,7 +213,17 @@ class AaToDnaTranlator extends HTMLElement {
      * @returns {string} the mutated DNA
      */
     #mutate(dna){
-        return dna //TODO
+        let mutatedDNA = dna
+        for(let off =0; off <= dna.length - 3; off +=3){
+            if(Math.random() < this.#mutationRate){
+                const randomTriplet = AaToDnaTranlator.#randomDna(1)
+                mutatedDNA = mutatedDNA.substr(0,off) + randomTriplet + mutatedDNA.substr(off+3, dna.length - off -3)
+            }
+        }
+        if(mutatedDNA.length != dna.length){
+            throw `expected mutated DNA to have same length as original`
+        }
+        return mutatedDNA
     }
 
     /**
@@ -402,6 +413,10 @@ class AaToDnaTranlator extends HTMLElement {
         return result
     }
 
+    /**
+     * @param {number} targetLength number of triplets that should make up the DNA
+     * @returns a random DNA 3*targetLength characters long
+     */
     static #randomDna(targetLength){
         const availableTriplets = AaToDnaTranlator.availableTriplets
         const mapSize = availableTriplets.length
