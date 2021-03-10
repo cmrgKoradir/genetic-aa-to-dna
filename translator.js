@@ -186,7 +186,33 @@ class AaToDnaTranlator extends HTMLElement {
      * @returns {Candidate} a mutated offspring of a and b 
      */
     #mate(a, b){
-        return a //TODO
+        const dnaA = a.dna
+        const dnaB = b.dna
+        if(dnaA.length != dnaB.length){
+            throw `Candidates's DNA must have equal length`
+        }
+
+        const nofTriplets = a.aa.length
+        const midpoint = randInt(nofTriplets)
+
+        let childDNA = Array(nofTriplets).fill(1).map((_,i) => {
+            const off = 3*i
+            const parent = i < midpoint ? dnaA : dnaB
+            return parent[off] + parent[off+1] + parent[off+2]
+        }).join('')
+
+        childDNA = this.#mutate(childDNA)
+        
+        return new Candidate(childDNA)
+    }
+
+    
+    /**
+     * @param {string} dna 
+     * @returns {string} the mutated DNA
+     */
+    #mutate(dna){
+        return dna //TODO
     }
 
     /**
