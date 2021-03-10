@@ -1,4 +1,4 @@
-import {randInt} from './random.js'
+import {randInt, weightedPick} from './random.js'
 
 class AaToDnaTranlator extends HTMLElement {
 
@@ -163,7 +163,6 @@ class AaToDnaTranlator extends HTMLElement {
     }
 
     /**
-     * 
      * @param {number} targetLength the number of AA symbol characters the candidates should produce
      * @param {Candidate[]} oldPopulation 
      * @returns 
@@ -173,8 +172,21 @@ class AaToDnaTranlator extends HTMLElement {
             return Array(this.#populationSize).fill(1).map(() => new Candidate(AaToDnaTranlator.#randomDna(targetLength)))
         }
 
-        //TODO: create new population
-        return oldPopulation
+        return Array(this.#populationSize).fill(1).map(() => {
+            const a = weightedPick(oldPopulation, c => c.fitness)
+            const b = weightedPick(oldPopulation, c => c.fitness)
+
+            return this.#mate(a,b)
+        })
+    }
+
+    /**
+     * @param {Candidate} a 
+     * @param {Candidate} b
+     * @returns {Candidate} a mutated offspring of a and b 
+     */
+    #mate(a, b){
+        return a //TODO
     }
 
     /**
