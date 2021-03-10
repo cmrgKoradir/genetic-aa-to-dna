@@ -2,6 +2,7 @@ import {randInt} from './random.js'
 
 class AaToDnaTranlator extends HTMLElement {
 
+    #epsilon = 0
     #populationSize = 200
 
     constructor(){
@@ -64,9 +65,85 @@ class AaToDnaTranlator extends HTMLElement {
             return
         }
 
-        let population = Array(this.#populationSize).fill(1).map(() => new Candidate(aaSequence.length))
+        aaSequence = aaSequence.toUpperCase()
+        const targetLength = aaSequence.length
+        let population = []
+        let achievedFitness = 0
+        let saveGuard = 10000
+        do {
+            population = this.#nextPopulation(targetLength, population)
+            this.#showCandidates(population)
+            achievedFitness = this.#calculateFitness(aaSequence, population)
+        }while(achievedFitness < 1-this.#epsilon && --saveGuard > 0)
+    }
 
-        this.#showCandidates(population)
+    /**
+     * calculates for each candidate in the population a normalised fitness score
+     * @param {string} target the AA sequence we want to achieve
+     * @param {Candidate[]} population the current candidates
+     * 
+     * @returns 1 if an exact match has been found or less otherwise
+     */
+    #calculateFitness(target, population){
+        const n = target.length
+
+        let maxC = 0
+        let sum = 0
+
+        //fitness = amount of matching positions
+        for(const p of population){
+            const c = this.#countEqualPositions(target, p.aa)
+            p.fitness = c
+            sum += c
+            maxC = Math.max(maxC, c)
+        }
+
+        //normalize fitness
+        if(sum > 0){
+            for(const p of population){
+                p.fitness = p.fitness / sum
+            }
+        }else {
+            for(const p of population){
+                p.fitness = 1/population.length
+            }
+        }
+
+        return maxC/n
+    }
+
+    /**
+     * @param {string} target 
+     * @param {string} candidateSequence 
+     * @returns {number} the amount of positions in which the candidate matches the target exactly
+     */
+    #countEqualPositions(target, candidateSequence){
+        if(target.length != candidateSequence.length){
+            throw `candidate of length ${candidateSequence.length} is invalid for target of length ${target.length}`
+        }
+
+        let count = 0
+        for(let i = 0; i < target.length; ++i){
+            if(target[i] == candidateSequence[i]){
+                ++count
+            }
+        }
+        return count
+    }
+
+    /**
+     * 
+     * @param {number} targetLength the number of AA symbol characters the candidates should produce
+     * @param {Candidate[]} oldPopulation 
+     * @returns 
+     */
+    #nextPopulation(targetLength, oldPopulation){
+        if(oldPopulation.length < this.#populationSize){
+            return Array(this.#populationSize).fill(1).map(() => new Candidate(AaToDnaTranlator.#randomDna(targetLength)))
+        }
+
+        //TODO: create new population
+        return oldPopulation
     }
 
     /**
@@ -209,26 +286,22 @@ class AaToDnaTranlator extends HTMLElement {
         }
         return result
     }
-}
 
-class Candidate{
-    /**
-     * @param {number} targetLength how long the AA sequence should be
-     */
-    constructor(targetLength){
-        this.updateDna(this.#randomDna(targetLength))
-    }
-
-    updateDna(dna){
-        this.dna = dna
-        this.aa = AaToDnaTranlator.dnaToAa(this.dna)
-    }
-
-    #randomDna(targetLength){
+    static #randomDna(targetLength){
         const availableTriplets = AaToDnaTranlator.availableTriplets
         const mapSize = availableTriplets.length
         const randomTriplets = Array(targetLength).fill(1).map(() => availableTriplets[randInt(mapSize)])
         return randomTriplets.join('')
+    }
+}
+
+class Candidate{
+    /**
+     * @param {string} dna the DNA sequence of target candidate
+     */
+    constructor(dna){
+        this.dna = dna
+        this.aa = AaToDnaTranlator.dnaToAa(this.dna)
     }
 }
 
