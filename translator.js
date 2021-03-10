@@ -4,7 +4,7 @@ class AaToDnaTranlator extends HTMLElement {
 
     #epsilon = 0
     #populationSize = 200
-    #maxGenerations = 10000
+    #maxGenerations = 1000
 
     #bestSoFar = undefined
     #currentGeneration = undefined
@@ -38,9 +38,11 @@ class AaToDnaTranlator extends HTMLElement {
                 display:flex;
                 flex-direction: column;
                 margin-bottom: 0.5em;
+                margin-top: 0.5em;
+                border: solid 0.1em;
             }
             .result > * {
-                margin-top: 0.5em;
+                margin-bottom: 0.5em;
             }
             .statistics{
                 display:flex;
@@ -67,7 +69,7 @@ class AaToDnaTranlator extends HTMLElement {
             </div>
             <div class="result">
                 <div class="statistics"></div>
-                <div class="best-fit"></div>
+                <div class="best-candidate"></div>
             </div>
             <div class="visualisation"></div>
         </div>
@@ -75,6 +77,8 @@ class AaToDnaTranlator extends HTMLElement {
         this._shadow.innerHTML = template
         this.style.height = '100%'
         this.style.width = '100%'
+
+        this._shadow.querySelector('.result').style.display = 'none'
 
         const translateBtn = this._shadow.querySelector('.translate-btn')
         const aaInput = this._shadow.querySelector('.aa-input')
@@ -174,6 +178,7 @@ class AaToDnaTranlator extends HTMLElement {
      * @param {Candidate[]} candidates the new candidates to display
      */
     #showCandidates(accuracy, candidates){
+        this._shadow.querySelector('.result').style.display = 'flex'
         const visualisation = this._shadow.querySelector('.visualisation')
         while(visualisation.lastElementChild){
             visualisation.removeChild(visualisation.lastElementChild)
@@ -244,7 +249,26 @@ class AaToDnaTranlator extends HTMLElement {
      * @param {Candidate} bestInGeneration 
      */
     #showBestCandidate(bestInGeneration){
-        //TODO
+        if(!this.#bestSoFar || bestInGeneration.score > this.#bestSoFar.score){
+            this.#bestSoFar = bestInGeneration
+        }
+        const bestDisplay = this._shadow.querySelector(".best-candidate")
+
+        bestDisplay.innerHTML = `
+            <style>
+                .best-dna,.best-aa {
+                    overflow-wrap: anywhere;
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: center;
+                }
+                .best-aa {
+                    font-weight: bold;
+                }
+            </style>
+            <div class="best-dna"><span>${this.#bestSoFar.dna}</span></div>
+            <div class="best-aa"><span>${this.#bestSoFar.aa}</span></div>
+        `
     }
 
     static #defaultAa = "X"
