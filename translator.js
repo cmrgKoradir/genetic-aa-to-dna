@@ -345,9 +345,13 @@ class AaToDnaTranlator extends HTMLElement {
                     justify-content: center;
                 }
                 .best-aa {
+                    display: flex;
+                    flex-wrap: wrap;
+                }
+                .best-aa > *{
                     font-weight: bold;
                 }
-                .best-aa .diff {
+                .best-aa > .diff {
                     color: red;
                 }
             </style>
