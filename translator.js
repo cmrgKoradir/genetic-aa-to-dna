@@ -32,12 +32,19 @@ class AaToDnaTranlator extends HTMLElement {
                 flex-direction: column;
                 height: 100%;
             }
+            .info {
+                display: flex;
+                flex-direction: column;
+            }
             .editor {
                 display: flex;
+                margin-top: 0.5em;
+            }
+            .editor > *:not(:last-child) {
+                margin-right:.5em;
             }
             .aa-input{
                 flex-grow:1;
-                margin-right:.5em;
             }
             .result {
                 display:flex;
@@ -68,9 +75,15 @@ class AaToDnaTranlator extends HTMLElement {
             }
         </style>
         <div class="aa-to-dna-translator">
+            <div class="info">
+                <div class="intro">
+                    <span>Uses a genetic algorithm to try and find a possible DNA sequence that produces the provided AA sequence.</span>
+                </div>
+            </div>
             <div class="editor">
                 <input class="aa-input"></input>
                 <button class="translate-btn">Translate</button>
+                <button class="random-input-btn">Random</Button>
             </div>
             <div class="result">
                 <div class="statistics"></div>
@@ -84,6 +97,7 @@ class AaToDnaTranlator extends HTMLElement {
         this.style.width = '100%'
 
         this._shadow.querySelector('.result').style.display = 'none'
+        this._shadow.querySelector('.random-input-btn').onclick = () => this.#randomAction()
 
         this.#stopAction()
     }
@@ -91,23 +105,33 @@ class AaToDnaTranlator extends HTMLElement {
     #startAction(){
         const translateBtn = this._shadow.querySelector('.translate-btn')
         const aaInput = this._shadow.querySelector('.aa-input')
+        const randomBtn = this._shadow.querySelector('.random-input-btn')
 
         this.#abort = false
         translateBtn.textContent = this.#stopLabel
         translateBtn.onclick = () => this.#stopAction()
+
+        randomBtn.style.display = "none"
 
         this.findPossibleDNA(aaInput.value)
     }
 
     #stopAction(){
         const translateBtn = this._shadow.querySelector('.translate-btn')
+        const randomBtn = this._shadow.querySelector('.random-input-btn')
 
         this.#abort = true
         translateBtn.textContent = this.#startLabel
         translateBtn.onclick = () => this.#startAction()
+
+        randomBtn.style.display = "block"
     }
 
-
+    #randomAction(){
+        const aaInput = this._shadow.querySelector('.aa-input')
+        aaInput.value = AaToDnaTranlator.#randomAa(25)
+        this.#startAction()
+    }
 
     findPossibleDNA(targetAaSequence){
         if(!targetAaSequence || targetAaSequence.length < 1){
@@ -456,8 +480,10 @@ class AaToDnaTranlator extends HTMLElement {
         ["GGA", "G"],
         ["GGG", "G"],
     ])
-    static availableTriplets = Array.from(AaToDnaTranlator.#dnaToAa.keys())
-    static availableSymbols = ['A','T','G','C']
+    static availableDnaTriplets = Array.from(AaToDnaTranlator.#dnaToAa.keys())
+    static availableAASymbols = Array.from(AaToDnaTranlator.#dnaToAa.values())
+        .filter(it =>'*' != it)
+        .filter((value, index, self) => self.indexOf(value) === index) //unique only
 
     /**
      * @param {string} dna a sequence of dna symbol triplets
@@ -484,10 +510,21 @@ class AaToDnaTranlator extends HTMLElement {
      * @returns a random DNA 3*targetLength characters long
      */
     static #randomDna(targetLength){
-        const availableTriplets = AaToDnaTranlator.availableTriplets
-        const mapSize = availableTriplets.length
-        const randomTriplets = Array(targetLength).fill(1).map(() => availableTriplets[randInt(mapSize)])
+        const availableDnaTriplets = AaToDnaTranlator.availableDnaTriplets
+        const mapSize = availableDnaTriplets.length
+        const randomTriplets = Array(targetLength)
+            .fill(1)
+            .map(() => availableDnaTriplets[randInt(mapSize)])
         return randomTriplets.join('')
+    }
+
+    static #randomAa(targetLength){
+        const availableAASymbols = AaToDnaTranlator.availableAASymbols
+        const mapSize = availableAASymbols.length
+        return Array(targetLength)
+            .fill(1)
+            .map(() => availableAASymbols[randInt(mapSize)])
+            .join('')
     }
 }
 
